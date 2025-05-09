@@ -170,6 +170,12 @@
 <div class="hljs-button {2} add_def" data-title="复制"></div></code><ul class="pre-numbering" style=""><li style="color: rgb(153, 153, 153);">1</li></ul><button class="btn-code-notes mdeditor icon-db" data-report-click="{&quot;spm&quot;:&quot;3001.10436&quot;,&quot;dest&quot;:&quot;https://www.doubao.com/chat/coding?channel=csdn&amp;source=dbweb_csdn&amp;keywordid=gw_02&quot;,&quot;extra&quot;:{&quot;index&quot;:22,&quot;runIdx&quot;:-1}}">AI写代码</button></pre> 
 <p><code>&gt; 注：1、gittest 是随意设置的仓库名 2、git@github.com:xiamemories/git-test.git缓存上面步骤中在github中复制的ssh地址</code><br> <img src="https://i-blog.csdnimg.cn/direct/b95bc2a52db14c8b83eb06343f816028.png" alt="在这里插入图片描述" data-extentions-extra-ocr-id="6c970d76385ca7c32dc401bc7e49f978"><br> 3）使用<code>git remote</code>查看仓库名称，如下图；<br> <img src="https://i-blog.csdnimg.cn/direct/aed7212c5bed41f5ab63d2eb0463a19c.png" alt="在这里插入图片描述" data-extentions-extra-ocr-id="534060e8b0017eddc2044b4dc5470bd0"><br> 4）使用下面<code>命令</code>，将远程仓库内容同步到本地仓库，命令执行完后，可以看到文件夹（ai_code_3）中的项目文件与远程仓库Github中已保持一致，如图；</p> 
 <pre data-index="23" class="set-code-show prettyprint"><code class="has-numbering" onclick="mdcp.copyCode(event)" style="position: unset;">git pull gittest HEAD
+
+fatal: refusing to merge unrelated histories
+你本地的 Git 仓库和远程仓库是两个“独立初始化”的仓库，Git 默认不允许直接合并它们的历史。
+解决办法：允许合并不相关历史
+git pull gittest main --allow-unrelated-histories
+Git 会提示你合并提交的信息，如果不想改可以直接保存退出（按 :wq 结束）。
 <div class="hljs-button {2} add_def" data-title="复制"></div></code><ul class="pre-numbering" style=""><li style="color: rgb(153, 153, 153);">1</li></ul><button class="btn-code-notes mdeditor icon-db" data-report-click="{&quot;spm&quot;:&quot;3001.10436&quot;,&quot;dest&quot;:&quot;https://www.doubao.com/chat/coding?channel=csdn&amp;source=dbweb_csdn&amp;keywordid=gw_02&quot;,&quot;extra&quot;:{&quot;index&quot;:23,&quot;runIdx&quot;:-1}}">AI写代码</button></pre> 
 <p><img src="https://i-blog.csdnimg.cn/direct/c9b7fadc69f9403c85c7c8f56afc07c9.png" alt="在这里插入图片描述" data-extentions-extra-ocr-id="161050076cfb735f36394689d0c3f512"></p> 
 <blockquote> 
