@@ -1,0 +1,566 @@
+
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import pandas as pd
+from sklearn.cluster import KMeans, AgglomerativeClustering
+
+# Set the seed
+# 设置种子
+np.random.seed(42)
+
+# Load data # 加载数据
+df = pd.read_csv('data_TWN/data_台湾_modified.csv')
+
+# Numerical and categorical variable lists
+# 数值和分类变量列表
+cat_vars = [
+    "IDCNTRY", "ITSEX", "LCID_SA", 
+    "ASRIBM", # "ASRIBM01", "ASRIBM02", "ASRIBM03", "ASRIBM04", "ASRIBM05",  # 计算平均“国际阅读量表基准达成”等级
+    "ASBG03", "ASBG04", "ASBG05A", "ASBG05B", "ASBG05C", "ASBG05D", "ASBG05E", "ASBG05F", "ASBG05G",
+    "ASBG05H", "ASBG05I", "ASBG05J", "ASBG05K", "ASBG06", "ASBG07A", "ASBG07B", "ASBG08A", "ASBG08B",
+    "ASBG09A", "ASBG09B", "ASBG09C", "ASBG09D", "ASBG09E", "ASBG09F", "ASBG09G", "ASBG09H", "ASBG10A",
+    "ASBG10B", "ASBG10C", "ASBG10D", "ASBG10E", "ASBG10F", "ASBG11A", "ASBG11B", "ASBG11C", "ASBG11D",
+    "ASBG11E", "ASBG11F", "ASBG11G", "ASBG11H", "ASBG11I", "ASBG11J", "ASBR01A", "ASBR01B", "ASBR01C",
+    "ASBR01D", "ASBR01E", "ASBR01F", "ASBR01G", "ASBR01H", "ASBR01I", "ASBR02A", "ASBR02B", "ASBR02C",
+    "ASBR02D", "ASBR02E", "ASBR03A", "ASBR03B", "ASBR03C", "ASBR04", "ASBR05", "ASBR06A", "ASBR06B",
+    "ASBR07A", "ASBR07B", "ASBR07C", "ASBR07D", "ASBR07E", "ASBR07F", "ASBR07G", "ASBR07H", "ASBR08A",
+    "ASBR08B", "ASBR08C", "ASBR08D", "ASBR08E", "ASBR08F", "ASDGSEC", "ASDGSSB", "ASDGSB", "ASDGERL",
+    "ASDGDRL", "ASDGSLR", "ASDGSCR", "ASDG05S", "ASDRLOWP", "ASBH01A", "ASBH01B", "ASBH01C", "ASBH01D",
+    "ASBH01E", "ASBH01F", "ASBH01G", "ASBH01H", "ASBH01I", "ASBH01J", "ASBH01K", "ASBH01L", "ASBH01M",
+    "ASBH01N", "ASBH01O", "ASBH01P", "ASBH01Q", "ASBH01R", "ASBH02A", "ASBH02B", "ASBH03A", "ASBH03B",
+    "ASBH03C", "ASBH03D", "ASBH03E", 
+    "ASBH03F", # 澳门缺少，香港缺少
+    "ASBH04", "ASBH05AA", "ASBH05AB", "ASBH05B", "ASBH06",
+    "ASBH07A", "ASBH07B", "ASBH07C", "ASBH07D", "ASBH07E", "ASBH07F", "ASBH07G", "ASBH08A", "ASBH08B",
+    "ASBH08C", "ASBH08D", "ASBH08E", "ASBH08F", "ASBH09", "ASBH10", "ASBH11A", "ASBH11B", "ASBH11C",
+    "ASBH11D", "ASBH11E", "ASBH11F", "ASBH11G", "ASBH11H", "ASBH12", "ASBH13", "ASBH14A", "ASBH14B",
+    "ASBH14C", "ASBH15A", "ASBH15B", "ASBH16", "ASBH17A", "ASBH17B", "ASBH18AA", "ASBH18AB", "ASBH18BA",
+    "ASBH18BB", "ASBH18CA", "ASBH18CB", "ASBH18DA", "ASBH18DB", "ASBH18EA", "ASBH18EB", 
+    "ASBH18FA","ASBH18FB", # 澳门缺少，香港缺少
+    "ASBH18GA", "ASBH18GB", "ASBH19", "ASBH20A", "ASBH20B", "ASBH20C", "ASBH21A", "ASBH21B",
+    "ASBH21C", "ASBH21D", "ASBH22", "ASDGHRL", "ASDHSES", "ASDHELA", "ASDHENA", "ASDHELN", "ASDHELT",
+    "ASDHPCS", "ASDHPLR", "ASDHAPS", "ASDHEDUP", "ASDHOCCP", "ACBG03A", "ACBG03B",
+    "ACBG04", "ACBG05A", "ACBG05B", "ACBG06C", "ACBG07A", "ACBG07B", "ACBG07C", "ACBG08", "ACBG10AA",
+    "ACBG10AB", "ACBG10AC", "ACBG10AD", "ACBG10AE", "ACBG10AF", "ACBG10AG", "ACBG10AH", "ACBG10AI",
+    "ACBG10AJ", "ACBG10BA", "ACBG10BB", "ACBG10BC", "ACBG10BD", "ACBG11A", "ACBG11B", "ACBG11C",
+    "ACBG11D", "ACBG11E", "ACBG11F", "ACBG11G", "ACBG11H", "ACBG11I", "ACBG11J", "ACBG11K", "ACBG11L",
+    "ACBG12A", "ACBG12B", "ACBG12C", "ACBG12D", "ACBG12E", "ACBG12F", "ACBG12G", "ACBG12H", "ACBG12I",
+    "ACBG12J", "ACBG13", "ACBG14A", "ACBG14B", "ACBG14C", "ACBG14D", "ACBG14E", "ACBG14F", "ACBG14G",
+    "ACBG14H", "ACBG14I", "ACBG14J", "ACBG14K", "ACBG14L", "ACBG14M", "ACBG14N", "ACBG17", "ACBG18A",
+    "ACBG18B", "ACBG18C", "ACBG19", "ACBG20", "ACBG21A", "ACBG21B", "ACBG21C", "ACBG21D", "ACBG21E",
+    "ACBG21F", "ACDGRRS", "ACDGEAS", "ACDGDAS", "ACDGSBC", "ATBG02", "ATBG03", "ATBG04", "ATBG05AA",
+    "ATBG05AB", "ATBG05AC", "ATBG05AD", "ATBG05BA", "ATBG05BB", "ATBG05BC", "ATBG05BD", "ATBG05BE",
+    "ATBG05BF", "ATBG05BG", "ATBG05BH", "ATBG05BI", "ATBG05BJ", "ATBG05BK", "ATBG06", "ATBG07AA",
+    "ATBG07BA", "ATBG07AB", "ATBG07BB", "ATBG07AC", "ATBG07BC", "ATBG07AD", "ATBG07BD", "ATBG07AE",
+    "ATBG07BE", "ATBG07AF", "ATBG07BF", "ATBG07AG", "ATBG07BG", "ATBG08A", "ATBG08B", "ATBG08C",
+    "ATBG08D", "ATBG08E", "ATBG09A", "ATBG09B", "ATBG09C", "ATBG09D", "ATBG10A", "ATBG10B", "ATBG10C",
+    "ATBG10D", "ATBG10E", "ATBG10F", "ATBG10G", "ATBG10H", "ATBG10I", "ATBG10J", "ATBG10K", "ATBG10L",
+    "ATBG11A", "ATBG11B", "ATBG11C", "ATBG11D", "ATBG11E", "ATBG11F", "ATBG11G", "ATBG11H", "ATBG11I",
+    "ATBG12A", "ATBG12B", "ATBG12C", "ATBG12D", "ATBG12E", "ATBG12F", "ATBR03A", "ATBR03B", "ATBR03C",
+    "ATBR03D", "ATBR03E", "ATBR03F", "ATBR03G", "ATBR03H", "ATBR06A", "ATBR06B", "ATBR06C", "ATBR06D",
+    "ATBR06E", "ATBR07AA", "ATBR07AB", "ATBR07AC", "ATBR07AD", "ATBR07BA", "ATBR07BB", "ATBR07BC",
+    "ATBR07BD", "ATBR08A", "ATBR08B", "ATBR08C", "ATBR08D", "ATBR08E", "ATBR08F", "ATBR08G", "ATBR08H",
+    "ATBR09A", "ATBR09B", "ATBR09C", "ATBR09D", "ATBR09E", "ATBR09F", "ATBR09G", "ATBR09H", "ATBR09I",
+    "ATBR10A", "ATBR10B", "ATBR10C", "ATBR10D", "ATBR10E", "ATBR10F", "ATBR10G", "ATBR10H", "ATBR10I",
+    "ATBR10J", "ATBR10K", "ATBR10L", "ATBR11A", "ATBR11B", "ATBR11C", "ATBR11D", "ATBR11E", "ATBR12A",
+    "ATBR12BA", "ATBR12BB", "ATBR12BC", "ATBR12BD", "ATBR12C", "ATBR12DA", "ATBR12DB", "ATBR12DC",
+    "ATBR12EA", "ATBR12EB", "ATBR12EC", "ATBR12ED", "ATBR12EE", "ATBR13A", "ATBR13B", "ATBR13C",
+    "ATBR13D", "ATBR13E", "ATBR14", "ATBR15", "ATBR16", "ATBR17A", "ATBR17B", "ATBR17C", "ATBR18A",
+    "ATBR18B", "ATBR18C", "ATBR18D", "ATBR18E", "ATBR19", "ATDGEAS", "ATDGSOS", "ATDGTJS", "ATDGSLI"
+]
+
+num_vars = [
+    "ASDAGE", 
+    "ASRREA", # "ASRREA01", "ASRREA02", "ASRREA03", "ASRREA04", "ASRREA05",  # 计算平均“总体阅读”得分
+    "ASRLIT", # "ASRLIT01", "ASRLIT02", "ASRLIT03", "ASRLIT04", "ASRLIT05",  # 计算平均“文学目的”得分
+    "ASRINF", # "ASRINF01", "ASRINF02", "ASRINF03", "ASRINF04", "ASRINF05",  # 计算平均“信息性目的”得分
+    "ASRIIE", # "ASRIIE01", "ASRIIE02", "ASRIIE03", "ASRIIE04", "ASRIIE05",  # 计算平均“解释过程”得分
+    "ASRRSI", # "ASRRSI01", "ASRRSI02", "ASRRSI03", "ASRRSI04", "ASRRSI05",   # 计算平均“直接过程”得分
+    "ASBGSEC", "ASBGSSB", "ASBGSB", "ASBGERL", "ASBGDRL", "ASBGSLR", "ASBGSCR",
+    "ASBGHRL", "ASBHSES", "ASBHELA", "ASBHENA", "ASBHELN", "ASBHELT", "ASBHPCS", "ASBHPLR", "ACBG06A",
+    "ACBG06B", "ACBG09", "ACBG15", "ACBG16", "ACBGRRS", "ACBGEAS", "ACBGDAS", "ACDGTIHY", "ATBG01", "ATBR01A", "ATBR01B",
+    "ATBR02A", "ATBR02B", "ATBR04", "ATBR05", "ATBGEAS", "ATBGSOS", "ATBGTJS", "ATBGSLI", "ATDGLIHY", "ATDGRIHY"
+]
+
+# 打印数值变量和分类变量
+print('数值变量:', len(num_vars))
+print('分类变量:', len(cat_vars))
+
+
+# 移除方差为零的数值变量
+num_vars_filtered = [var for var in num_vars if df[var].var() > 0]
+# 更新 num_vars 并筛选 DataFrame
+num_vars = num_vars_filtered  # 确保后续步骤使用过滤后的变量列表
+
+# 移除分类变量中唯一值总数小于2的分类变量 和 方差为零的分类变量
+cat_vars_filtered = [var for var in cat_vars if df[var].nunique() >= 2 and df[var].var() > 0]
+# 添加额外检查：删除唯一值数量为1的变量
+cat_vars_filtered = [var for var in cat_vars_filtered if df[var].nunique() > 1]
+# 更新 num_vars 并筛选 DataFrame
+cat_vars = cat_vars_filtered  # 确保后续步骤使用过滤后的变量列表
+# print(df[cat_vars].nunique())
+
+# 检查数据类型
+# 检查并更改分类变量的数据类型
+for var in cat_vars:
+    if df[var].dtype != "Int64":
+        if df[var].isnull().any():
+            # print(f"{var} 包含 NaN 值，转换为支持 NaN 的 Int64 类型")
+            df[var] = df[var].astype("Int64")  # 转换为支持 NaN 的整数类型
+        else:
+            df[var] = df[var].astype("int64")
+        # print(f"{var} 已更改为分类变量 (Int64)")
+        
+# 检查并更改数值变量的数据类型
+for var in num_vars:
+    if df[var].dtype != "float64":
+        if df[var].isnull().any():
+            # print(f"{var} 包含 NaN 值，填充为 0 后转换为 float64")
+            df[var] = df[var].fillna(0).astype("float64")  # 填充 NaN 值
+        else:
+            df[var] = df[var].astype("float64")
+        # print(f"{var} 已更改为数值变量 (float64)")
+
+# 提取指定的列，组成新的 DataFrame
+columns_to_extract = num_vars + cat_vars
+df = df[columns_to_extract]
+
+# 原始数据样本数
+print(f"原始数据样本数: {len(df)}")
+print(df.shape, '>>', df.isnull().sum().sum())
+# 打印数值变量和分类变量
+print('数值变量:', len(num_vars), num_vars)
+print('分类变量:', len(cat_vars), cat_vars)
+
+
+# 检查数值变量的方差
+zero_variance_vars = [var for var in num_vars if df[var].var() == 0]
+print("方差为零的变量:", zero_variance_vars)
+
+# 检查分类变量的唯一值数量
+low_unique_vars = [var for var in cat_vars if df[var].nunique() <= 1]
+print("唯一值数量小于等于1的变量:", low_unique_vars)
+
+
+
+# 数据预处理 DATA PREPROCESSING
+print('--- 数据预处理 DATA PREPROCESSING ---')
+from clearn.data_preprocessing import *
+
+# 计算缺失值 Computre missing values
+n_missing = df.isnull().sum().sum()
+print('缺失值 Missing values:', n_missing, f'({n_missing*100/df.size}%)')
+# 打印缺失值统计 Compute missing values
+print("打印缺失值统计:\n", compute_missing(df))
+
+# 缺失值比率结果保存
+compute_missing(df).to_csv('data_TWN/data_台湾_modified_缺失值比率.csv', index=False)
+print("已完成，缺失值比率，结果保存。")
+
+# 生成缺失值热图 Generate missing values heat map
+missing_values_heatmap(df, output_path=os.path.join("img_TWN", "缺失值热图missing_heatmap.jpg"))
+print("已完成缺失值热图的生成。")
+
+# print('数值变量类型:', df[num_vars].dtypes)
+# print('分类变量类型:', df[cat_vars].dtypes)
+
+# 插补缺失值 Impute missing values
+# 1.生成一个“插补对”（imputation pairs）的列表，用于确定哪些变量之间具有较强的相关性，可以用来填补缺失值。
+# 2.根据第一步生成的“填补对”来填补数据框 df 中的缺失值
+# empirical discrete distributions for numerical variables 数值变量：经验离散分布
+# linear regression for numerical variables 数值变量：线性分布
+# 分类变量：热卡填充（Hot Deck Imputation）
+df_imp = impute_missing_values(df, num_vars=num_vars, cat_vars=cat_vars)
+
+print(f"插补缺失值后剩余样本数: {len(df_imp)}")
+print(df_imp.shape, '>>', df_imp.isnull().sum().sum())
+
+# 打印数值变量和分类变量
+print('数值变量:', len(num_vars))
+print('分类变量:', len(cat_vars))
+
+# plot_imputation_distribution_assessment(df.loc[df_imp.index], df_imp, list(compute_missing(df).head(16)['var_name']))
+# 绘制插补前后所选变量分布之间的比较
+# Plot the comparison between the distribution of a selection of variables before and after imputation
+plot_imputation_distribution_assessment(df.loc[df_imp.index], df_imp, list(compute_missing(df).head(16)['var_name']),
+                                        output_path=os.path.join("img_TWN", "插补分布对比图imputation_distribution_assessment.jpg"))
+print("已完成插补分布对比图的生成。")
+
+# 删除异常值 Remove outliers
+# 异常值检测
+df_, outliers = remove_outliers(df_imp, num_vars + cat_vars)
+print(f"删除异常值后剩余样本数: {len(df_)}")
+print(df_.shape, '>>', df_.isnull().sum().sum())
+# 打印数值变量和分类变量
+print('变量数量:', len(num_vars)+len(cat_vars))
+print('数值变量:', len(num_vars), num_vars)
+print('分类变量:', len(cat_vars), cat_vars)
+
+# 在降维代码前添加检查
+print("分类变量唯一值最大分类数:", df_[cat_vars].nunique().max())
+
+df_ = df_.reset_index(drop=True)  # 重置索引
+
+# 在数据预处理后添加分类变量类型转换
+for var in cat_vars:
+    df_[var] = df_[var].astype(int)
+# 插补结果保存
+df_.to_csv('data_TWN/data_台湾_modified_preprocessing.csv', index=False)
+print("已完成导出数据预处理结果，并将结果保存到 CSV 文件中。")
+
+
+# 降维 DIMENSIONALITY REDUCTION
+print('--- 降维 DIMENSIONALITY REDUCTION ---')
+
+# 连接列表 x 和 y
+z = num_vars + cat_vars
+
+from clearn.dimensionality_reduction import DimensionalityReduction
+# 实例化类，并将其投影到最优成分数量的低维空间
+# Instantiate class, project to a lower dimensionality with optimal number of components
+
+# 即使使用SPCA，PCA的结果仍作为参考来确定解释方差，从而应用手肘法。
+dr = DimensionalityReduction(df_[z], num_vars=num_vars, cat_vars=cat_vars, num_algorithm='spca')
+# SPCA + MCA 自动选择逻辑-----最优的成分数量：
+# 当 min_explained_variance_ratio=None 时，数值变量（SPCA）基于 PCA 的方差曲线使用手肘法，分类变量（MCA）基于校正后的方差曲线使用手肘法。
+# 注意事项：
+    # SPCA 的稀疏性可能导致实际解释方差与 PCA 不同，需手动验证；
+        # 手肘法验证：对 SPCA 和 MCA 分别绘制解释方差曲线，观察拐点合理性：
+        # # 数值变量（PCA 解释方差曲线）
+        # dr.plot_num_explained_variance(plots=['cumulative'])
+        # # 分类变量（MCA 解释方差曲线）
+        # dr.plot_cat_explained_variance(plots=['cumulative'])
+    # MCA 的校正方差计算更可靠，可直接依赖自动选择。
+df_t = dr.transform(min_explained_variance_ratio=None)
+
+print("降维后的全部变量数量：", dr.n_components_, "降维后的数值变量数量：", len(dr.num_components_), "降维后的分类变量的数量：", len(dr.cat_components_))
+print("降维后的数值变量：", dr.num_components_)
+print("降维后的分类变量：", dr.cat_components_)
+
+# 全部数值主成分的主要贡献变量
+print("全部数值主成分的主要贡献变量\n", dr.num_main_contributors()) 
+# 全部数值主成分的主要贡献变量:结果保存
+dr.num_main_contributors().to_csv('data_TWN/data_台湾_modified_全部数值主成分的主要贡献变量.csv', index=False)
+print("已完成，全部数值主成分的主要贡献变量，结果保存。")
+
+# 绘制全部数值变量的主要贡献变量图表
+dr.plot_num_main_contributors(n_contributors=8,  # 显示前8个主要贡献变量
+                              output_path=os.path.join("img_TWN", '全部数值主成分的主要贡献变量图表dim_red_num_contributors.jpg')
+                              )
+print("已完成全部数值主成分的主要贡献变量图表的生成。")
+
+
+# 解释第四个提取成分 Explain fourth extracted component
+print("其中一个数值主成分的主要贡献变量\n", dr.num_main_contributors(dim_idx=3)) # 打印主要贡献变量 
+# 绘制主要贡献变量图表
+dr.plot_num_main_contributors(dim_idx=3, output_path=os.path.join("img_TWN", "其中一个数值主成分的主要贡献变量图表dim_red_main_contributors.jpg"))
+print("已完成其中一个数值主成分的主要贡献变量图表的生成。")
+
+# 解释方差 + 肘部法 Explained variance + elbow method
+# 数值变量降维（SPCA/PCA） 的解释方差曲线，辅助验证手肘法选择的成分数是否合理。
+dr.plot_num_explained_variance(0.5, plots=['cumulative', 'ratio', 'normalized'],
+                               output_path=os.path.join("img_TWN", "数值变量降维的解释方差曲线dim_red_explained_variance.jpg"))
+print("已完成数值变量降维的解释方差曲线的生成。")
+
+# 分类变量降维（MCA） 的解释方差曲线，辅助验证手肘法选择的成分数是否合理。
+dr.plot_cat_explained_variance(0.5, plots=['cumulative', 'ratio', 'normalized'],
+                               output_path=os.path.join("img_TWN", "分类变量降维的解释方差曲线dim_red_explained_variance.jpg")) 
+print("已完成分类变量降维的解释方差曲线的生成。")
+
+# 解释从分类变量中提取的成分
+# Explain component extracted from categorical variables 
+# 下表提供了原始值的每个值的成分均值和std。这有助于评估新组件是否正确地反映了原始分类变量的不同值。
+print("解释从分类变量中提取的成分:\n", dr.cat_main_contributors_stats())
+# 解释从分类变量中提取的成分:结果保存
+dr.cat_main_contributors_stats().to_csv('data_TWN/data_台湾_modified_解释从分类变量中提取的成分.csv', index=False)
+print("已完成，解释从分类变量中提取的成分，结果保存。")
+
+# 在分类变量的降维过程中（如MCA）后，有几个原始变量与新的构造变量（主成分）高度相关，默认相关性阈值为0.14
+# 绘制分类变量成分分布
+dr.plot_cat_main_contributor_distribution(dim_idx=0, 
+                                          thres=0.5,  # 提高相关性阈值
+                                          n_contributors=5,  # 增加显示数量
+                                          output_path=os.path.join("img_TWN", "分类变量成分分布dim_red_cat_component.jpg"))
+print("已完成分类变量成分分布的生成。")
+
+df_t.to_csv('data_TWN/data_台湾_modified_preprocessed_dim_red_output.csv', index=False)
+print("已完成导出降维结果，并将结果保存到 CSV 文件中。")
+
+
+# 聚类 CLUSTERING
+print('--- 聚类 CLUSTERING ---')
+from clearn.clustering import Clustering
+from sklearn.cluster import AgglomerativeClustering, KMeans
+from sklearn.mixture import GaussianMixture
+
+# 实例化类并在投影空间计算聚类
+# Instantiate class and compute clusters on projected space
+# cl = Clustering(df_t, algorithms=['KMeans()', 'AgglomerativeClustering()'], normalize=False)
+
+# 创建三种聚类算法实例，并通过Clustering类封装数据。
+# K均值适合球形簇，层次聚类适合层级结构，高斯混合模型适合复杂分布。
+km = KMeans(random_state=42)
+ward = AgglomerativeClustering()
+gmm = GaussianMixture()
+# 实例化类并在投影空间计算聚类
+cl = Clustering(
+    df_t, 
+    # algorithms=[KMeans(random_state=42), AgglomerativeClustering()],  # 传入算法实例
+    algorithms= [km, ward, gmm],
+    normalize=False
+)
+
+
+# 在2到21个聚类范围内寻找最优聚类数，并为聚类标签添加前缀STU。
+# 返回每个样本的聚类标签。
+cl.compute_clusters(max_clusters=21, prefix='STU')
+
+# 在调用 plot_score_comparison 前转换标签类型
+cl.df['cluster'] = cl.df['cluster'].astype(int)
+
+# 横轴（Number of clusters）：表示聚类的数量，从 1 到 21。
+# 纵轴（Weighted Sum of Squared Distances）：表示加权平方距离（Weighted Sum of Squared Distances），值越小表示聚类效果越好
+cl.plot_score_comparison(output_path=os.path.join("img_TWN", "聚类算法性能的图表performance_comparison.jpg"))
+print("已完成聚类算法性能的图表的生成。")
+
+# 最优配置（算法、聚类数、评分）
+print("最优配置（算法、聚类数、评分）\n", cl.optimal_config_)
+
+
+# 绘制每个聚类的观测数  # 聚类结果可视化
+# Plot number of observations per cluster
+cl.plot_clustercount(output_path=os.path.join("img_TWN", "聚类数量分布图cluster_count.jpg"))
+print("已完成聚类数量分布图的生成。")
+
+
+# 比较聚类内均值与全局均值 
+# Compare intra-cluster means to global means
+print("比较聚类内均值与全局均值：\n", cl.compare_cluster_means_to_global_means())
+# 比较聚类内均值与全局均值:结果保存
+cl.compare_cluster_means_to_global_means().to_csv('data_TWN/data_台湾_modified_比较聚类内均值与全局均值.csv', index=False)
+print("已完成，比较聚类内均值与全局均值，结果保存。")
+
+# 聚类均值对比热图
+# Principal Components 主成分
+# Clusters 聚类（簇）
+cl.plot_cluster_means_to_global_means_comparison(xlabel='Principal Components', ylabel='Clusters',
+                                                 levels=[-1, -0.67, -0.3, -0.15, 0.15, 0.3, 0.67, 1],
+                                                 output_path=os.path.join("img_TWN", "聚类均值对比热图clustering_intra_comparison.jpg"))
+print("已完成聚类均值对比热图的生成。") 
+
+# 比较原始数值变量在各聚类中的分布
+# Compare distributions of original variables by cluster
+cl.plot_distribution_comparison_by_cluster(output_path=os.path.join("img_TWN", "比较原始数值变量在各聚类中的分布clustering_distribution_comparison.jpg"))
+print("已完成比较原始数值变量在各聚类中的分布的生成。")
+
+# ASBGERL	STUDENTS ENGAGED IN READING LESSONS/SCL	学生参与阅读课程/量表
+# ASBHSES	HOME SOCIOECONOMIC STATUS/SCL	家庭社会经济地位/量表
+# 比较部分原始数值变量在各聚类中的分布
+cl.plot_distribution_comparison_by_cluster(df_ext=df_[['ASBGERL', 'ASBHSES']],
+                                           output_path=os.path.join("img_TWN", "部分_比较原始数值变量在各聚类中的分布clustering_distribution_comparison.jpg"))
+print("已完成部分比较原始数值变量在各聚类中的分布的生成。")
+
+
+# 2-D plots # 二维图 2D 数值变量的可视化
+cl.plot_clusters_2D('dim_01', 'dim_02', output_path=os.path.join("img_TWN", "2D数值变量的可视化clustering_2d_plots.jpg"))
+print("已完成2D数值变量的可视化的生成。")
+
+
+# ASDHSES	HOME SOCIOECONOMIC STATUS/IDX	家庭社会经济地位/指数
+# 比较单一原始分类变量在各聚类中的分布
+# Comparison of original categorical variable distribution by cluster
+print(cl.describe_clusters_cat(df_['ASDHSES'], cat_name='ASDHSES', normalize=True))
+# 比较单一原始分类变量在各聚类中的分布:结果保存
+cl.describe_clusters_cat(df_['ASDHSES'], cat_name='ASDHSES', normalize=True).to_csv('data_TWN/data_台湾_modified_比较单一原始分类变量ASDHSES在各聚类中的分布.csv', index=False)
+print("已完成，比较单一原始分类变量ASDHSES在各聚类中的分布，结果保存。")
+
+# 单一原始分类变量在各聚类中的分布
+cl.plot_cat_distribution_by_cluster(df_['ASDHSES'], cat_label='ASDHSES', cluster_label='Student clusters',
+                                    output_path=os.path.join("img_TWN", "单一原始分类变量在各聚类中的分布clustering_cat_comparison.jpg"))
+print("已完成单一原始分类变量在各聚类中的分布的生成。")
+
+# 其中包含与提取的成分相关的聚类。
+cl.df.to_csv('data_TWN/data_台湾_modified_preprocessed_dim_red_clustered_output.csv', index=False)
+print("已完成导出聚类结果，包含与提取的成分相关的聚类，并将结果保存到 CSV 文件中。")
+
+# 将聚类分配给包含原始变量的数据框
+# Assign clusters to data frame with original variables
+# df_['cluster'] = cl.df['cluster'].values
+# df_['cluster_cat'] = cl.df['cluster_cat'].values
+# 一次性添加两列
+new_columns = pd.DataFrame({
+    "cluster": cl.df["cluster"].values,
+    "cluster_cat": cl.df["cluster_cat"].values
+})
+df_ = pd.concat([df_, new_columns], axis=1)
+
+# 绘制肘部法则用于选择最优 k 的标准化 WSS 曲线  # 最优聚类数选择曲线
+# Plot normalized WSS curve for optimal k selection
+cl.plot_optimal_components_normalized(output_path=os.path.join("img_TWN", "最优聚类数选择曲线clustering_elbow_curve.jpg"))
+print("已完成最优聚类数选择曲线的生成。")
+
+# 其中包含与原始数据相关的聚类。
+df_.to_csv('data_TWN/data_台湾_modified_preprocessed_clustered_output.csv', index=False)
+print("已完成导出聚类结果，包含与原始数据相关的聚类，并将结果保存到 CSV 文件中。")
+
+# print(list(df_.columns()))
+
+# 删除TEA_04这个类别
+# df_ = df_[df_['cluster'] != 4]
+
+
+# CLASSIFIER # 分类器
+print('--- CLASSIFIER 分类---')
+from clearn.classifier import Classifier
+np.random.seed(42)
+
+# 确保目标变量是整数
+df_['cluster'] = df_['cluster'].astype(int)  
+
+# 用原始变量实例化类。将上面计算的聚类设置为目标
+# Instantiate the class with the original variables. As target, we set the clusters computed above
+print("原始变量：\n",list(df_.columns))
+var_list = list(df_.columns[:-2])  # 除了最后两个列
+print("原始变量（除了最后两个列）：\n", var_list)
+
+# 一共有多少类别
+print("一共有多少类别:\n", df_['cluster'].value_counts())
+# 获取有多少类别，保存结果
+df_['cluster'].value_counts().to_csv('data_TWN/data_台湾_modified_聚类类别数.csv', index=False)
+print("已完成，聚类类别数，结果保存。")
+
+# 使用原始数据初始化分类器。
+# 参数：
+# df_：原始数据集。
+# var_list：使用数据集中除最后两列以外的所有列作为特征。
+# df_['cluster']：目标变量（聚类标签）。
+# num_cols：指定数值特征。
+# cat_cols：指定分类特征。
+classifier = Classifier(df_, predictor_cols=var_list, target=df_['cluster'], num_cols=num_vars, cat_cols=cat_vars)
+
+# Build a pipeline with feature selection, hyperparameter tuning, and model fitting. For feature selection, we make sure
+# that variable ESCS (economic, social and cultural status) gets selected (features_to_keep=['ESCS']). Hyperparameter
+# optimization is performed through exhaustive grid search for different values of the number of estimators
+# (n_estimators=[30, 60]), eta (eta=[0.15, 0.25]), and maximum tree depth (max_depth=[3, 5, 7]). The algorithms used are
+# those configured by default, i.e. random forest for feature selection and xgboost for the final classification model.
+# 构建一个包含特征选择、超参数调整和模型拟合的管道。
+# 在特征选择中，例如确保变量 ESCS（经济、社会和文化地位）被选中（features_to_keep=['ESCS']）。
+# 通过穷举网格搜索对估计器数量（n_estimators=[30, 60]）、eta（eta=[0.15, 0.25]）和最大树深度（max_depth=[3, 5, 7]）的不同值进行超参数优化。
+# 使用的算法是默认配置的，即随机森林用于特征选择，xgboost 用于最终分类模型。
+classifier.train_model(features_to_keep=[
+    "ASDGSEC", "ASDGSSB", "ASDGSB", "ASDGERL","ASDGDRL", "ASDGSLR", "ASDGSCR", 
+    # "ASBGSEC", "ASBGSSB", "ASBGSB", "ASBGERL", "ASBGDRL", "ASBGSLR", "ASBGSCR",
+    "ASDG05S", 
+    "ASDGHRL", "ASDHSES", "ASDHELA", "ASDHENA", "ASDHELN", "ASDHELT","ASDHPCS", "ASDHPLR",
+    # "ASBGHRL", "ASBHSES", "ASBHELA", "ASBHENA", "ASBHELN", "ASBHELT", "ASBHPCS", "ASBHPLR",
+    "ASDHAPS", "ASDHEDUP", "ASDHOCCP", 
+    "ACDGRRS", "ACDGEAS", "ACDGDAS", "ACDGSBC", "ATDGEAS", "ATDGSOS", "ATDGTJS", "ATDGSLI",
+    # "ACBGRRS", "ACBGEAS", "ACBGDAS", "ACDGTIHY","ATBGEAS", "ATBGSOS", "ATBGTJS", "ATBGSLI", 
+    "ATDGLIHY", "ATDGRIHY"
+    ], 
+                       hyperparameter_tuning=True,
+                       param_grid=dict(n_estimators=[30, 60], eta=[0.15, 0.25], max_depth=[3, 5, 7])# 确保传递类别数
+                       )
+# 常用的超参数包括：
+# n_estimators：树的数量。通常从较小的值（如 30 或 50）开始，逐步增加到 100 或 200。如果数据量较大，可以尝试更高的值
+# max_depth：树的最大深度。较小的深度（如 3 或 5）可以防止过拟合。如果数据复杂，可以尝试更大的值（如 7 或 9）。
+# eta：学习率。通常选择较小的值（如 0.05 或 0.1），以确保模型收敛稳定。如果希望快速训练，可以尝试稍大的值（如 0.2 或 0.3）。
+# subsample：每棵树使用的样本比例。
+# colsample_bytree：每棵树使用的特征比例。这两个参数控制随机采样的比例，通常选择 0.8 或 1.0。
+# gamma：分裂节点的最小损失减少值。控制分裂的保守程度，通常选择 0、1 或 5。
+# min_child_weight：子节点所需的最小样本权重和。控制子节点的最小样本权重，通常选择 1、3 或 5。
+
+
+# 获取五个最重要特征的全局特征重要性 打印特征重要性
+# Get global feature importance of the five most important features
+print("前几个最重要特征的全局特征重要性:\n", classifier.feature_importances.head())
+# 获取最重要特征的全局特征重要性 打印特征重要性，保存结果
+classifier.feature_importances.to_csv('data_TWN/data_台湾_modified_全局特征重要性.csv', index=False)
+print("已完成，全局特征重要性，结果保存。")
+
+# 查看经过特征选择后保留的特征数量。
+print("筛选后的特征数量:", len(classifier.filtered_features_), "\n筛选后的特征:", classifier.filtered_features_)
+
+
+# Performance assessment # 性能评估  # 模型评估输出（开始）
+# Hyperparameter tuning results # 超参数调整结果,包括最佳参数和对应的性能指标。
+print("超参数调优结果:\n", classifier.hyperparameter_tuning_metrics()) # 打印超参数调优结果
+# 查看模型超参数调优结果。保存结果
+classifier.confusion_matrix().to_csv('data_TWN/data_台湾_modified_超参数调优结果.csv', index=False)
+print("已完成，模型超参数调优结果，结果保存。")
+
+
+# 查看训练好的模型对象。
+print("训练好的模型对象:\n", classifier.model_) # 打印训练好的模型对象
+# 查看训练好的模型对象的参数。
+print("训练好的模型对象的参数:\n", classifier.model_.get_params()) # 打印训练好的模型对象的参数
+
+
+# test:默认=True,如果为True，返回在测试集上计算的混淆矩阵。如果为False，返回在训练集上的混淆矩阵。
+# 查看模型在训练集上的混淆矩阵。
+print("模型在训练集上的混淆矩阵\n", classifier.confusion_matrix(test=False))
+# 查看模型在训练集上的混淆矩阵。保存结果
+classifier.confusion_matrix(test=False).to_csv('data_TWN/data_台湾_modified_模型在训练集上的混淆矩阵.csv', index=False)
+print("已完成，模型在训练集上的混淆矩阵，结果保存。")
+
+# 查看模型在测试集上的混淆矩阵。
+print("模型在测试集上的混淆矩阵\n", classifier.confusion_matrix())
+# 查看模型在测试集上的混淆矩阵。保存结果
+classifier.confusion_matrix().to_csv('data_TWN/data_台湾_modified_模型在测试集上的混淆矩阵.csv', index=False)
+print("已完成，模型在测试集上的混淆矩阵，结果保存。")
+
+# Confusion matrix # 混淆矩阵 # 绘制混淆矩阵
+classifier.plot_confusion_matrix(output_path=os.path.join("img_TWN", "混淆矩阵classifier_confusion_matrix.jpg"))
+print("已完成混淆矩阵的生成。")
+
+
+# Classification report # # 打印分类报告 包括精确率（precision）、召回率（recall）和 F1 分数，support 列表示每个类别的样本数量（总样本数）
+print("分类报告:\n", classifier.classification_report())
+# 查看模型分类报告。保存结果
+classifier.classification_report().to_csv('data_TWN/data_台湾_modified_分类报告.csv', index=False)
+print("已完成，模型分类报告，结果保存。")
+
+# ROC curves # ROC 曲线 评估分类性能
+classifier.plot_roc_curves(output_path=os.path.join("img_TWN", "评估分类性能的ROC曲线classifier_roc_curves.jpg"))
+print("已完成评估分类性能的ROC曲线的生成。")
+
+
+# 使用 SHAP（SHapley Additive exPlanations）方法绘制全局特征重要性图
+# Plot global feature importance
+classifier.plot_shap_importances(output_path=os.path.join("img_TWN", "全局特征重要性图classifier_global_feature_importance.jpg"))
+plt.clf()
+print("已完成全局特征重要性图生成")
+
+# 使用 SHAP 方法绘制指定类别（如 class_id=0）的特征重要性。
+# 绘制标识符为 1 和 2 的聚类的局部重要性
+# Plot local importance for clusters with identifiers 1 and 2
+classifier.plot_shap_importances_beeswarm(class_id=1,
+                                          output_path=os.path.join("img_TWN", "聚类1的局部重要性classifier_local_importance_cl1.jpg"))
+plt.clf()
+print("已完成聚类1的局部重要性生成")
+
+classifier.plot_shap_importances_beeswarm(class_id=2,
+                                          output_path=os.path.join("img_TWN", "聚类2的局部重要性classifier_local_importance_cl2.jpg"))
+plt.clf()
+print("已完成聚类2的局部重要性生成")
+
+
+# # 绘制 SHAP 值的分布图，显示每个特征对模型预测的影响。
+# # Plot SHAP values distribution
+# classifier.plot_shap_values_distribution(output_path=os.path.join("img_TWN", "SHAP值的分布图classifier_shap_values_distribution.jpg"))
+# plt.clf()
+# print("已完成SHAP值的分布图生成")
+
+
+# 导出预测结果 使用训练好的模型对数据进行预测，并将结果保存到 CSV 文件中。
+final = classifier.df[classifier.filtered_features_ + ['cluster']].copy()
+final['cluster_pred'] = classifier.model_.predict(classifier.df[classifier.filtered_features_])
+final.to_csv('data_TWN/data_台湾_modified_dimred_vars_classification_output.csv', index=False)
+print("已完成导出预测结果 使用训练好的模型对数据进行预测，并将结果保存到 CSV 文件中。")
+
+
+
+
+
+
